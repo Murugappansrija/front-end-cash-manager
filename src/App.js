@@ -1,79 +1,57 @@
-import { useEffect, useState } from "react";
-import { useGlobalContext } from "./Context/useContext";
-import { Routes, Route, useNavigate } from "react-router-dom"
-import Login from "./components/Login/Login";
-import DashboardLogin from "./components/Login/Dashboard";
-import Header from "./components/Login/Header";
-import RegisterPage from "./components/Login/Register";
-import PasswordResetPage from "./components/Login/PasswordReset";
-import ForgotPasswordPage from "./components/Login/ForgotPassword";
-import { Box, CircularProgress } from "@mui/material";
-import ErrorPage from "./components/Login/Error";
-
-
+import Header from "./components/Header";
+import { Routes, Route } from "react-router-dom";
+import "./App.css";
+import Home from "./components/Home";
+import Movies from "./components/Movies/Movies";
+import Admin from "./components/Admin/Admin";
+import Auth from "./components/Auth/Auth";
+import Theater from "./components/Theater/Theater";
+import Booking from "./components/Booking/Booking";
+import { useDispatch, useSelector } from "react-redux";
+import { useEffect } from "react";
+import { adminAction, userAction } from "./Store";
+import Ticket from "./components/Booking/Ticket";
+import Profile from "./Profile/Profile";
 
 function App() {
+  const dispatch = useDispatch();
 
-  const [data, setData] = useState(false);
-
-  const { logindata, setLoginData } = useGlobalContext
-
-
-  const history = useNavigate();
-
-  const DashboardValid = async () => {
-    let token = localStorage.getItem("usersdatatoken");
-
-    const res = await fetch("https://expencetracker-mern.onrender.com/validuser", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": token
-      }
-    });
-
-    const data = await res.json();
-
-    if (data.status == 401 || !data) {
-      console.log("user not valid");
-    } else {
-      console.log("user verify");
-      setLoginData(data)
-      history("/dash");
-    }
-  }
+  const isAdminLoggedIn = useSelector((state) => state.admin.isLoggedIn);
+  const isUserLoggedIn = useSelector((state) => state.user.isLoggedIn);
+  console.log("admin", isAdminLoggedIn);
+  console.log("user", isUserLoggedIn);
 
   useEffect(() => {
-    setTimeout(()=>{
-      DashboardValid();
-      setData(true)
-    },2000)
-
-  }, [])
+    if (localStorage.getItem("userId")) {
+      dispatch(userAction.login());
+    } else if (localStorage.getItem("adminId")) {
+      dispatch(adminAction.login());
+    }
+  }, []);
 
   return (
-    <>
-      {
-        data ? (
-          <>
-            <Header/>
+    <div>
+      <Header />
+      <section>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/movies" element={<Movies />} />
 
-            <Routes>
-              <Route path="/" element={<Login />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/dash" element={<DashboardLogin />} />
-              <Route path="/password-reset" element={<PasswordResetPage/>} />
-              <Route path="/forgotpassword/:id/:token" element={<ForgotPasswordPage/>} />
-              <Route path="*" element={<ErrorPage />} />
-            </Routes>
-          </>
+          {!isUserLoggedIn && !isAdminLoggedIn && (
+            <>
+              {" "}
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/auth" element={<Auth />} />
+            </>
+          )}
 
-        ) : <Box sx={{ display: 'flex', justifyContent: "center", alignItems: "center", height: "100vh" }}>
-          Loading... &nbsp;
-          <CircularProgress/>
-        </Box>
-      }
-    </>
+          <Route path="/theater" element={<Theater />} />
+          <Route path="/booking" element={<Booking />} />
+          <Route path="/ticket/:id" element={<Ticket />} />
+          <Route path="/user" element={<Profile />} />
+        </Routes>
+      </section>
+    </div>
   );
 }
 
